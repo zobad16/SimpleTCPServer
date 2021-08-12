@@ -64,11 +64,15 @@ namespace AsynchServer
                 //Get the socket that handles client request
                 Socket listener = (Socket)ar.AsyncState;
                 Socket handler = listener.EndAccept(ar);
-
+                int _port = ((IPEndPoint)handler.RemoteEndPoint).Port;
+                string ip = ((IPEndPoint)handler.RemoteEndPoint).Address.ToString();
                 //Create state object
                 StateObject state = new StateObject();
                 state.worksocket = handler;
-                handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+                /*string lp_name = ConnectionManager.GetValue(ip, _port).LpName;
+                ConnectionManager.AddSession(lp_name, handler);
+                var session = ConnectionManager.Sessions[lp_name];
+                */handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
                     new AsyncCallback(ReadCallback), state);
             }
             catch(Exception e) {
@@ -82,15 +86,17 @@ namespace AsynchServer
             {
 
                 String content = String.Empty;
-
+                string initialization_msg = "</c>";
                 //Retrieve state obj and handler socket
                 //from async state object
 
                 StateObject state = (StateObject)ar.AsyncState;
                 Socket handler = state.worksocket;
-                int _port = ((IPEndPoint)handler.LocalEndPoint).Port;
-                string ip = ((IPEndPoint)handler.LocalEndPoint).Address.ToString();
-                string source = ConnectionManager.GetValue(ip, _port).LpName;
+                int _port = ((IPEndPoint)handler.RemoteEndPoint).Port;
+                string ip = ((IPEndPoint)handler.RemoteEndPoint).Address.ToString();
+                string source = "";
+                /*if (ConnectionManager.GetValue(ip, _port).LpName != null)
+                    source = ConnectionManager.GetValue(ip, _port).LpName;*/
                 //Read data from client socket
                 int bytesRead = handler.EndReceive(ar);
                 if (bytesRead > 0)
@@ -100,8 +106,15 @@ namespace AsynchServer
                     //Check for end of file tag.
                     //If doesnt exist: read more data
                     content = state.sb.ToString();
+                    if(content.IndexOf(initialization_msg) >-1)
+                    {
+                        Console.WriteLine("Port{0}| Client Received: {1} -Read bytes {2}.\nData: {3}", _port, DateTime.Now.ToString("HH:mm:ss.ffffff"), content.Length, content);
+                        CreateSession(ar, content);
+                        
+                    }
                     if (content.IndexOf("<EOF>") > -1)
                     {
+                        source = ConnectionManager.GetValue(ip, _port).LpName;
                         if (!(content.IndexOf("q<EOF>") > -1))
                         {
                             Console.WriteLine("Port{0}| Client Received: {1} -Read bytes {2}.\nData: {3}", _port, DateTime.Now.ToString("HH:mm:ss.ffffff"), content.Length, content);
@@ -116,9 +129,13 @@ namespace AsynchServer
                         {
                             Console.WriteLine("Port{0}| Client Received: {1} -Read bytes {2}.\nData: {3}", _port, DateTime.Now.ToString("HH:mm:ss.ffffff"), content.Length, content);
                             Console.WriteLine("Data transmission stopped");
+                            Console.WriteLine("======================================\n======================================");
+
+                            handler.Close();
+                            ConnectionManager.RemoveSession(source);
                         }
                     }
-                    else
+                    else if(!(content.IndexOf("<EOF>") > -1) && !(content.IndexOf(initialization_msg) > -1))
                     {
                         //Not all data received. Get more
                         handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
@@ -160,6 +177,33 @@ namespace AsynchServer
                 Console.WriteLine(e.Message);
             }
         
+        }
+
+        private static void CreateSession(IAsyncResult ar, string message) {
+            //Create an entry in lp and sessions
+            //in lp for ip and port set the destination ip and port
+            int pos = message.IndexOf('<');
+            string parsed_string = message.Remove(pos);
+            StateObject state = (StateObject)ar.AsyncState;
+            Socket handler = state.worksocket;
+            int _port = ((IPEndPoint)handler.RemoteEndPoint).Port;
+            string ip = ((IPEndPoint)handler.RemoteEndPoint).Address.ToString();
+            ConnectionManager.Add(parsed_string,new LiquidityProvider(parsed_string,"MT5","",ip,_port));
+            ConnectionManager.AddSession(parsed_string, handler);
+            Console.WriteLine("Client {0} initialized. Session created", parsed_string);
+            Console.WriteLine("======================================\nStarting Market Data\n======================================");
+            state.sb.Clear();
+            SendAck(ar);
+            
+            handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+                                new AsyncCallback(ReadCallback), state);
+        }
+        private static void SendAck(IAsyncResult ar)
+        {
+            StateObject state = (StateObject)ar.AsyncState;
+            Socket handler = state.worksocket;
+
+            Send(handler, "<ack>");
         }
     }
 }

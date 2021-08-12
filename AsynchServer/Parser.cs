@@ -4,6 +4,7 @@ using System.Text;
 
 namespace AsynchServer
 {
+    //TODO- Multiple type of Parser
     public class Parser
     {
         public Parser()
@@ -12,11 +13,17 @@ namespace AsynchServer
         }
         public event EventHandler<MarketData> RaiseTickEvent;
         public void Parse(string source, string message) {
-            RaiseTickEvent?.Invoke(this, new MarketData(source, "XAUUSD.r", 1737.03, 1737.10, 1737.03, 1740.00, 1737.00, 1737.02));
+            //From source select the type of parser to use
+            if (ConnectionManager.GetValue(source).Platform == "MT5")
+                MessageParserMt5(source, message);
+            
         }
         protected virtual void OnTick(MarketData tick)
         {
             Console.WriteLine("---- message received ----\nparsing message");
+        }
+        private void MessageParserMt5(string source, string message) {
+            RaiseTickEvent?.Invoke(this, new MarketData(source, "XAUUSD.r", 1737.03, 1737.10, 1737.03, 1740.00, 1737.00, 1737.02));
         }
         
     }
