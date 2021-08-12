@@ -9,10 +9,15 @@ namespace AsynchServer
     public class Server
     {
         public static ManualResetEvent allDone = new ManualResetEvent(false);
-        public Server()
-        {
+        private static Parser _parser;
 
+        public static Parser Parser { get => _parser; set => _parser = value; }
+
+        public Server(Parser _parse)
+        {
+            _parser = _parse;
         }
+        
         public static void StartListening(int port = 9100) {
             //Establish local endpoint for socket
             IPHostEntry ipHostInfo      = Dns.GetHostEntry(Dns.GetHostName());
@@ -52,60 +57,81 @@ namespace AsynchServer
         }
         public static void AcceptCallback(IAsyncResult ar) {
             //Signal main thread to continue
-            allDone.Set();
+            try
+            {
+                allDone.Set();
 
-            //Get the socket that handles client request
-            Socket listener = (Socket)ar.AsyncState;
-            Socket handler = listener.EndAccept(ar);
+                //Get the socket that handles client request
+                Socket listener = (Socket)ar.AsyncState;
+                Socket handler = listener.EndAccept(ar);
 
-            //Create state object
-            StateObject state = new StateObject();
-            state.worksocket = handler;
-            handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
-                new AsyncCallback(ReadCallback),state);
+                //Create state object
+                StateObject state = new StateObject();
+                state.worksocket = handler;
+                handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+                    new AsyncCallback(ReadCallback), state);
+            }
+            catch(Exception e) {
+                Console.WriteLine("Connection close. Reason {0}",e.Message);
+            }
+            
         }
         public static void ReadCallback(IAsyncResult ar) {
-            String content = String.Empty;
 
-            //Retrieve state obj and handler socket
-            //from async state object
-             
-            StateObject state = (StateObject)ar.AsyncState;
-            Socket handler = state.worksocket;
-            int _port = ((IPEndPoint)handler.LocalEndPoint).Port;
-            //Read data from client socket
-            int bytesRead = handler.EndReceive(ar);
-            if(bytesRead > 0)
+            try
             {
-                //There might be more data, so store the data received so far
-                state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, bytesRead));
-                //Check for end of file tag.
-                //If doesnt exist: read more data
-                content = state.sb.ToString();
-                if (content.IndexOf("<EOF>") > -1)
+
+                String content = String.Empty;
+
+                //Retrieve state obj and handler socket
+                //from async state object
+
+                StateObject state = (StateObject)ar.AsyncState;
+                Socket handler = state.worksocket;
+                int _port = ((IPEndPoint)handler.LocalEndPoint).Port;
+                string ip = ((IPEndPoint)handler.LocalEndPoint).Address.ToString();
+                string source = ConnectionManager.GetValue(ip, _port).LpName;
+                //Read data from client socket
+                int bytesRead = handler.EndReceive(ar);
+                if (bytesRead > 0)
                 {
-                    if (!(content.IndexOf("q<EOF>") > -1))
+                    //There might be more data, so store the data received so far
+                    state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, bytesRead));
+                    //Check for end of file tag.
+                    //If doesnt exist: read more data
+                    content = state.sb.ToString();
+                    if (content.IndexOf("<EOF>") > -1)
                     {
-                        Console.WriteLine("Port{0}| Client Received: {1} -Read bytes {2}.\nData: {3}", _port, DateTime.Now.ToString("HH:mm:ss.ffffff"), content.Length, content);
-                        //Echo data back to the client
-                        Send(handler, content);
-                        state.sb.Clear();
-                        handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
-                            new AsyncCallback(ReadCallback), state);
+                        if (!(content.IndexOf("q<EOF>") > -1))
+                        {
+                            Console.WriteLine("Port{0}| Client Received: {1} -Read bytes {2}.\nData: {3}", _port, DateTime.Now.ToString("HH:mm:ss.ffffff"), content.Length, content);
+                            _parser.Parse(source, "message");
+                            //Echo data back to the client
+                            Send(handler, content);
+                            state.sb.Clear();
+                            handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+                                new AsyncCallback(ReadCallback), state);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Port{0}| Client Received: {1} -Read bytes {2}.\nData: {3}", _port, DateTime.Now.ToString("HH:mm:ss.ffffff"), content.Length, content);
+                            Console.WriteLine("Data transmission stopped");
+                        }
                     }
                     else
                     {
-                        Console.WriteLine("Port{0}| Client Received: {1} -Read bytes {2}.\nData: {3}",_port ,DateTime.Now.ToString("HH:mm:ss.ffffff"), content.Length, content);
-                        Console.WriteLine("Data transmission stopped");
+                        //Not all data received. Get more
+                        handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+                            new AsyncCallback(ReadCallback), state);
                     }
-                }
-                else
-                {
-                    //Not all data received. Get more
-                    handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
-                        new AsyncCallback(ReadCallback), state);
+
                 }
 
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Read operation stopped. Connection close. Reason: {0}",e.Message);
             }
         }
         public static void Send(Socket handler, String data) {

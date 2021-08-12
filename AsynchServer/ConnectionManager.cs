@@ -4,35 +4,45 @@ using System.Text;
 
 namespace AsynchServer
 {
-    public class ConnectionManager
+    public static class ConnectionManager
     {
-        Dictionary<string, LiquidityProvider> _Lp= new Dictionary<string, LiquidityProvider>();
-
-        public Dictionary<string, LiquidityProvider> Lp { get => _Lp; set => _Lp = value; }
-
-        public void Add(string name, LiquidityProvider lp)
+        private static Dictionary<string, LiquidityProvider> _Lp= new Dictionary<string, LiquidityProvider>();
+        
+        
+        public static Dictionary<string, LiquidityProvider> Lp { get => _Lp; set => _Lp = value; }
+        
+        public static void Add(string name, LiquidityProvider lp)
         {
             bool isExists = IsExists(name);
             if (!isExists) Lp.Add(name, lp);
             else Edit(name, lp);
         }
-        public void Edit(string name, LiquidityProvider lp)
+        public static void Edit(string name, LiquidityProvider lp)
         {
             bool isExists = IsExists(name);
             if (isExists) Lp[name] = lp;
         }
-        public void Remove(string name)
+        public static void Remove(string name)
         {
             Lp.Remove(name);
         }
-        public bool IsExists(string name)
+        public static bool IsExists(string name)
         {
             Lp.ContainsKey(name);
             return false;
         }
-        public LiquidityProvider GetValue(string name)
+        public static LiquidityProvider GetValue(string name)
         {
             return Lp[name];
+        }
+        public static LiquidityProvider GetValue(string ip, int port)
+        { 
+            foreach(var con in Lp)
+            {
+                if (con.Value.Ip == ip && con.Value.Port == port)
+                    return con.Value;
+            }
+            return null;
         }
 
     }
