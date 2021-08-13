@@ -8,6 +8,7 @@ namespace AsynchServer
     {
         private string _source;
         private string _symbol;
+        private DateTime _time;
         private double _bid;
         private double _ask;
         private double _open;
@@ -26,9 +27,22 @@ namespace AsynchServer
             _low = low;
             _close = close;
         }
+        public MarketData()
+        {
+            _source = "";
+            _symbol = "";
+            _time = new DateTime();
+            _bid = 0.00;
+            _ask = 0.00;
+            _open = 0.00;
+            _high = 0.00;
+            _low = 0.00;
+            _close = 0.00;
+        }
 
         public string Source { get => _source; set => _source = value; }
         public string Symbol { get => _symbol; set => _symbol = value; }
+        public DateTime Time { get => _time; set => _time = value; } 
         public double Bid { get => _bid; set => _bid = value; }
         public double Ask { get => _ask; set => _ask = value; }
         public double Open { get => _open; set => _open = value; }

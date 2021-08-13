@@ -8,7 +8,9 @@ namespace AsynchServer
         static int Main(string[] args)
         {
             Parser parser = new Parser();
+            Ticker.InitializeTicker(parser);
             Application app = new Application("Main APP",parser);
+            app.Initialize();
             Server.Parser = parser;
             //Instead of defining here.
             //We just listen on 1 port

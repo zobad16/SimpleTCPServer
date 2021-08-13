@@ -118,7 +118,7 @@ namespace AsynchServer
                         if (!(content.IndexOf("q<EOF>") > -1))
                         {
                             Console.WriteLine("Port{0}| Client Received: {1} -Read bytes {2}.\nData: {3}", _port, DateTime.Now.ToString("HH:mm:ss.ffffff"), content.Length, content);
-                            _parser.Parse(source, "message");
+                            _parser.Parse(source, content);
                             //Echo data back to the client
                             Send(handler, content);
                             state.sb.Clear();

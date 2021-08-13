@@ -23,7 +23,18 @@ namespace AsynchServer
             Console.WriteLine("---- message received ----\nparsing message");
         }
         private void MessageParserMt5(string source, string message) {
-            RaiseTickEvent?.Invoke(this, new MarketData(source, "XAUUSD.r", 1737.03, 1737.10, 1737.03, 1740.00, 1737.00, 1737.02));
+            int prev_pos = 0, pos=0;
+            MarketData md = new MarketData();
+            string[] mdl = message.Split("|");
+            md.Time = Convert.ToDateTime(mdl[0]);
+            md.Symbol = mdl[1];
+            md.Bid = double.Parse(mdl[2]);
+            md.Ask = double.Parse(mdl[3]);
+            if (md.Ask > md.High) md.High = md.Ask;
+            if (md.Bid < md.Low) md.Low = md.Bid;
+            md.Source = source;
+            
+            RaiseTickEvent?.Invoke(this, md);
         }
         
     }
