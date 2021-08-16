@@ -15,9 +15,8 @@ namespace AsynchServer
             if (Subscribers.ContainsKey(symbol)) Subscribers[symbol].Add(eventHandler);
             else
             {
-                var list = new List<EventHandler<MarketData>>();
-                list.Add(eventHandler);
-                Subscribers.Add(symbol, list);
+                Subscribers.Add(symbol, new List<EventHandler<MarketData>>());
+                Subscribers[symbol].Add(eventHandler);
             }
         }
         public static void Unsubscribe(string symbol, EventHandler<MarketData> eventHandler)
@@ -30,12 +29,18 @@ namespace AsynchServer
             Tick.Add("XAUUSD.r", new MarketData());
             Tick.Add("XAGUSD.r", new MarketData());
             Tick.Add("GC-Z21", new MarketData());
+            Tick.Add("GC.Z21", new MarketData());
         }
         private static void TickHandler(object sender, MarketData e) {
             if (Tick.ContainsKey(e.Symbol))
                 Tick[e.Symbol] = e;
             else
+            {
                 Tick.Add(e.Symbol, e);
+                Subscribers.TryAdd(e.Symbol, new List<EventHandler<MarketData>>());
+
+            }
+                
             //Invoke subscribers
             foreach(var handlers in Subscribers[e.Symbol])
             {

@@ -23,7 +23,6 @@ namespace AsynchServer
             Console.WriteLine("---- message received ----\nparsing message");
         }
         private void MessageParserMt5(string source, string message) {
-            int prev_pos = 0, pos=0;
             MarketData md = new MarketData();
             string[] mdl = message.Split("|");
             md.Time = Convert.ToDateTime(mdl[0]);
@@ -31,7 +30,8 @@ namespace AsynchServer
             md.Bid = double.Parse(mdl[2]);
             md.Ask = double.Parse(mdl[3]);
             if (md.Ask > md.High) md.High = md.Ask;
-            if (md.Bid < md.Low) md.Low = md.Bid;
+            if (md.Bid < md.Low ) md.Low = md.Bid;
+            if (md.Low == 0.00) md.Low = md.Bid;
             md.Source = source;
             
             RaiseTickEvent?.Invoke(this, md);
