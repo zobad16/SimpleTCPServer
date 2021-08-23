@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AsynchServer.Services;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -10,14 +11,17 @@ namespace AsynchServer
     {
         public static ManualResetEvent allDone = new ManualResetEvent(false);
         private static Parser _parser;
-
-        public static Parser Parser { get => _parser; set => _parser = value; }
-
-        public Server(Parser _parse)
+        private static LoginService _loginService;
+        /*public Server(Parser _parse, LoginService login)
         {
             _parser = _parse;
+            _loginService = login;
+        }*/
+        public static void InitializeServer(Parser parse, LoginService login)
+        {
+            _parser = parse;
+            _loginService = login;
         }
-        
         public static void StartListening(int port = 9100) {
             //Establish local endpoint for socket
             IPHostEntry ipHostInfo      = Dns.GetHostEntry(Dns.GetHostName());
@@ -106,19 +110,15 @@ namespace AsynchServer
                     //Check for end of file tag.
                     //If doesnt exist: read more data
                     content = state.sb.ToString();
-                    if(content.IndexOf(initialization_msg) >-1)
+                    
+                    if (content.IndexOf("<EOF>") > -1 || content.IndexOf(initialization_msg) > -1)
                     {
-                        Console.WriteLine("Port{0}| Client Received: {1} -Read bytes {2}.\nData: {3}", _port, DateTime.Now.ToString("HH:mm:ss.ffffff"), content.Length, content);
-                        CreateSession(ar, content);
-                        
-                    }
-                    if (content.IndexOf("<EOF>") > -1)
-                    {
-                        source = ConnectionManager.GetValue(ip, _port).LpName;
+                        var lp = ConnectionManager.GetValue(ip, _port).LpName;
+                        source =  lp;
                         if (!(content.IndexOf("q<EOF>") > -1))
                         {
                             Console.WriteLine("Port{0}| Client Received: {1} -Read bytes {2}.\nData: {3}", _port, DateTime.Now.ToString("HH:mm:ss.ffffff"), content.Length, content);
-                            _parser.Parse(source, content);
+                            _parser.ParseMessage(ar,source, content);
                             //Echo data back to the client
                             Send(handler, content);
                             state.sb.Clear();
@@ -179,7 +179,7 @@ namespace AsynchServer
         
         }
 
-        private static void CreateSession(IAsyncResult ar, string message) {
+        /*private static void CreateSession(IAsyncResult ar, string message) {
             //Create an entry in lp and sessions
             //in lp for ip and port set the destination ip and port
             int pos = message.IndexOf('<');
@@ -204,6 +204,6 @@ namespace AsynchServer
             Socket handler = state.worksocket;
 
             Send(handler, "<ack>");
-        }
+        }*/
     }
 }

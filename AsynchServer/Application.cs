@@ -7,6 +7,7 @@ namespace AsynchServer
     public class Application
     {
         string id;
+        //private readonly MarketDataService;
         public Application(string _id)
         {
             id = _id;

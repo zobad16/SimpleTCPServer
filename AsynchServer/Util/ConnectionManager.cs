@@ -63,7 +63,7 @@ namespace AsynchServer
                 if (con.Value.Ip == ip && con.Value.Port == port)
                     return con.Value;
             }
-            return null;
+            return new LiquidityProvider();
         }
 
     }

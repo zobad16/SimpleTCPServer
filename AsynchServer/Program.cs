@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AsynchServer.Services;
+using System;
 using System.Threading;
 
 namespace AsynchServer
@@ -7,11 +8,15 @@ namespace AsynchServer
     {
         static int Main(string[] args)
         {
-            Parser parser = new Parser();
+            //initialize services
+            LoginService login = new LoginService();
+
+            Parser parser = new Parser(login);
+
             Ticker.InitializeTicker(parser);
             Application mt5app = new Application("MT5 APP");
             mt5app.Initialize();
-            Server.Parser = parser;
+            Server.InitializeServer( parser, login);
             ConnectionManager.Add("Online Fintech I",new LiquidityProvider("Online Fintech","MT5", "987607", "127.0.0.1",91));
             ConnectionManager.Add("VPFX", new LiquidityProvider("VPFX","MT5", "987416", "127.0.0.1", 92));
             Console.WriteLine("Starting server");
