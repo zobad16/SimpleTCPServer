@@ -90,17 +90,13 @@ namespace AsynchServer
             {
 
                 String content = String.Empty;
-                string initialization_msg = "</c>";
-                //Retrieve state obj and handler socket
-                //from async state object
-
+                
                 StateObject state = (StateObject)ar.AsyncState;
                 Socket handler = state.worksocket;
                 int _port = ((IPEndPoint)handler.RemoteEndPoint).Port;
                 string ip = ((IPEndPoint)handler.RemoteEndPoint).Address.ToString();
                 string source = "";
-                /*if (ConnectionManager.GetValue(ip, _port).LpName != null)
-                    source = ConnectionManager.GetValue(ip, _port).LpName;*/
+                
                 //Read data from client socket
                 int bytesRead = handler.EndReceive(ar);
                 if (bytesRead > 0)
@@ -111,13 +107,13 @@ namespace AsynchServer
                     //If doesnt exist: read more data
                     content = state.sb.ToString();
                     
-                    if (content.IndexOf("<EOF>") > -1 || content.IndexOf(initialization_msg) > -1)
+                    if (content.IndexOf("<EOF>") > -1 )
                     {
                         var lp = ConnectionManager.GetValue(ip, _port).LpName;
                         source =  lp;
                         if (!(content.IndexOf("q<EOF>") > -1))
                         {
-                            Console.WriteLine("Port{0}| Client Received: {1} -Read bytes {2}.\nData: {3}", _port, DateTime.Now.ToString("HH:mm:ss.ffffff"), content.Length, content);
+                            //Console.WriteLine("Port{0}| Client Received: {1} -Read bytes {2}.\nData: {3}", _port, DateTime.Now.ToString("HH:mm:ss.ffffff"), content.Length, content);
                             _parser.ParseMessage(ar,source, content);
                             //Echo data back to the client
                             Send(handler, content);
@@ -135,7 +131,7 @@ namespace AsynchServer
                             ConnectionManager.RemoveSession(source);
                         }
                     }
-                    else if(!(content.IndexOf("<EOF>") > -1) && !(content.IndexOf(initialization_msg) > -1))
+                    else if(!(content.IndexOf("<EOF>") > -1) )
                     {
                         //Not all data received. Get more
                         handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
@@ -167,7 +163,7 @@ namespace AsynchServer
 
                 //complete sending data to remote device
                 int bytesSent = handler.EndSend(ar);
-                Console.WriteLine("Sent {0} bytes to client.", bytesSent);
+                //Console.WriteLine("Sent {0} bytes to client.", bytesSent);
 
                 //handler.Shutdown(SocketShutdown.Both);
                 //handler.Close();

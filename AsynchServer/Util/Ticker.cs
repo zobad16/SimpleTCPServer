@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AsynchServer.Model;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -6,8 +7,8 @@ namespace AsynchServer
 {
    public static class Ticker
     {
-        private static Dictionary<string, MarketData> _tick = new Dictionary<string, MarketData>();
-        public static Dictionary<string, MarketData> Tick { get => _tick; set => _tick = value; }
+        private static Dictionary<TickerKey, MarketData> _tick = new Dictionary<TickerKey, MarketData>();
+        public static Dictionary<TickerKey, MarketData> Tick { get => _tick; set => _tick = value; }
         public static Dictionary<string, List<EventHandler<MarketData>>> Subscribers { get => _subscribers; set => _subscribers = value; }
         private static Dictionary<string, List<EventHandler<MarketData>>> _subscribers = new Dictionary<string, List<EventHandler<MarketData>>>();
         
@@ -24,19 +25,31 @@ namespace AsynchServer
             if (Subscribers.ContainsKey(symbol))
                 Subscribers[symbol].Remove(eventHandler);
         }
-        public static void InitializeTicker(Parser parser) {
+        public static void InitializeTicker(string source,Parser parser) {
             parser.RaiseTickEvent += TickHandler;
-            Tick.Add("XAUUSD.r", new MarketData());
-            Tick.Add("XAGUSD.r", new MarketData());
-            Tick.Add("GC-Z21", new MarketData());
-            Tick.Add("GC.Z21", new MarketData());
+            var key = new TickerKey(source, "");
+
+            Tick.Add(new TickerKey(source, "XAUUSD.r"), new MarketData());
+            Tick.Add(new TickerKey(source, "XAGUSD.r"), new MarketData());
+            Tick.Add(new TickerKey(source, "GC-Z21"), new MarketData());
+            Tick.Add(new TickerKey(source, "GC.Z21"), new MarketData());
         }
         private static void TickHandler(object sender, MarketData e) {
-            if (Tick.ContainsKey(e.Symbol))
-                Tick[e.Symbol] = e;
+            var key = new TickerKey(e.Source, e.Symbol);
+            if (Tick.ContainsKey(key))
+            {
+                Tick[key].Bid = e.Bid;
+                Tick[key].Ask = e.Ask;
+                if(Tick[key].High < e.Ask)
+                    Tick[key].High = e.Ask;
+                if (Tick[key].Low > 0.0 &&
+                    Tick[key].Low > e.Bid)
+                    Tick[key].Low = e.Bid;
+            }
+                
             else
             {
-                Tick.Add(e.Symbol, e);
+                Tick.Add(key, e);
                 Subscribers.TryAdd(e.Symbol, new List<EventHandler<MarketData>>());
 
             }

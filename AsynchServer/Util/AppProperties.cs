@@ -16,7 +16,7 @@ namespace AsynchServer.Util
             BUY_STOP_LIMIT = 6,
             SELL_STOP_LIMIT = 7
         };
-        public enum ServerMessageType{
+        public enum MessageType{
             HEART_BEAT = 0, 
             LOGIN = 1,
             NEW_ORDER = 2,
@@ -27,16 +27,29 @@ namespace AsynchServer.Util
             CLOSE_POSITION = 7,
             REQUEST_POSITION_SNAPSHOT = 8,
             MD_SUBSCRIBE = 9,
-            MD_UNSUBSCRIBE = 10
+            MD_UNSUBSCRIBE = 10,
+            MARKET_DATA = 11,
+            ORDER_SNAPSHOT = 12,
+            POSITION_SNAPSHOT = 13
         };
-        public enum ClientMessageType
+        public enum MessageField
         {
-            HEART_BEAT = 0,
-            LOGIN = 1,
-            MARKET_DATA = 2,
-            ORDER_SNAPSHOT = 3,
-            POSITION_SNAPSHOT = 4
-            
-        };
+            MESSAGE_TYPE = 0,
+            CLIENT_ID =1,
+            DATE =2,
+            DATA =3,
+            EOF = 4
+        }
+        public static int GetIntValue(OrderType obj){
+            return (int)obj;
+        }
+        public static int GetIntValue(MessageType obj)
+        {
+            return (int)obj;
+        }
+        public static int GetIntValue(MessageField obj)
+        {
+            return (int)obj;
+        }
     }
 }

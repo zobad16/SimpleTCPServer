@@ -10,11 +10,11 @@ namespace AsynchServer
         {
             //initialize services
             LoginService login = new LoginService();
-
+            MarketDataService md = new MarketDataService();
             Parser parser = new Parser(login);
 
-            Ticker.InitializeTicker(parser);
-            Application mt5app = new Application("MT5 APP");
+            //Ticker.InitializeTicker(parser);
+            Application mt5app = new Application("MT5 APP",md);
             mt5app.Initialize();
             Server.InitializeServer( parser, login);
             ConnectionManager.Add("Online Fintech I",new LiquidityProvider("Online Fintech","MT5", "987607", "127.0.0.1",91));

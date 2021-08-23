@@ -27,18 +27,34 @@ namespace AsynchServer
             string ip = ((IPEndPoint)handler.RemoteEndPoint).Address.ToString();
             //From source select the type of parser to use
             //Check for initialization message
+            string[] msg = message.Split("|");
+            int msg_type = (int)AppProperties.MessageField.MESSAGE_TYPE;
+            int msg_source = (int)AppProperties.MessageField.CLIENT_ID;
+            int msg_data = (int)AppProperties.MessageField.DATA;
             if (source == "")
             {
-                string initialization_msg = "</c>";
-                if (message.IndexOf(initialization_msg) > -1)
+                
+                string msg_type_login = ""+(int)AppProperties.MessageType.LOGIN;
+                
+                if (msg[msg_type].Equals(msg_type_login)
+                    && msg[msg_data].Equals("Request"))
                 {
+                    Ticker.InitializeTicker(msg[msg_source],this);
                     Console.WriteLine("Port{0}| Client Received: {1} -Read bytes {2}.\nData: {3}", _port, DateTime.Now.ToString("HH:mm:ss.ffffff"), message.Length, message);
-                    loginService.CreateSession(ar, message);
+                    loginService.CreateSession(ar, msg[msg_source]);
                 }
-
+                              
             }
-            if (ConnectionManager.GetValue(source).Platform == "MT5")
-                MessageParserMt5(source, message);
+            else
+            {
+                string md = ""+AppProperties.GetIntValue(AppProperties.MessageType.MARKET_DATA);
+                if (msg[msg_type].Equals(md))
+                {
+                    MessageParserMt5(msg[msg_source], msg[AppProperties.GetIntValue(AppProperties.MessageField.DATE)], msg[AppProperties.GetIntValue(AppProperties.MessageField.DATA)]);
+                }
+            }
+            //if (ConnectionManager.GetValue(source).Platform == "MT5")
+               // MessageParserMt5(source, message);
             
         }
         protected virtual void OnTick(MarketData tick)
@@ -49,20 +65,20 @@ namespace AsynchServer
         {
             Console.WriteLine("---- message received ----\nparsing message");
         }
-        private void MessageParserMt5(string source, string message) {
-            string[] mdl = message.Split("|");
+        private void MessageParserMt5(string source,string date, string message) {
+            string[] mdl = message.Split(";");
             /*switch (mdl[0])
             {
                 case AppProperties.ServerMessageType
                 default:
                     break;
             }*/
-
+             
             MarketData md = new MarketData();
-            md.Time = Convert.ToDateTime(mdl[0]);
-            md.Symbol = mdl[1];
-            md.Bid = double.Parse(mdl[2]);
-            md.Ask = double.Parse(mdl[3]);
+            md.Time = Convert.ToDateTime(date);
+            md.Symbol = mdl[0];
+            md.Bid = double.Parse(mdl[1]);
+            md.Ask = double.Parse(mdl[2]);
             if (md.Ask > md.High) md.High = md.Ask;
             if (md.Bid < md.Low ) md.Low = md.Bid;
             if (md.Low == 0.00) md.Low = md.Bid;
