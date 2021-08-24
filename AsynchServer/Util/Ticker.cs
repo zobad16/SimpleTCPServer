@@ -28,14 +28,25 @@ namespace AsynchServer
         public static void InitializeTicker(string source,Parser parser) {
             parser.RaiseTickEvent += TickHandler;
             var key = new TickerKey(source, "");
-
-            Tick.Add(new TickerKey(source, "XAUUSD.r"), new MarketData());
-            Tick.Add(new TickerKey(source, "XAGUSD.r"), new MarketData());
-            Tick.Add(new TickerKey(source, "GC-Z21"), new MarketData());
-            Tick.Add(new TickerKey(source, "GC.Z21"), new MarketData());
+            if(!Tick.ContainsKey(new TickerKey(source, "XAUUSD.r")))
+                Tick.Add(new TickerKey(source, "XAUUSD.r"), new MarketData());
+            if (!Tick.ContainsKey(new TickerKey(source, "XAGUSD.r")))
+                Tick.Add(new TickerKey(source, "XAGUSD.r"), new MarketData());
+            if (!Tick.ContainsKey(new TickerKey(source, "GC-Z21"))) 
+                Tick.Add(new TickerKey(source, "GC-Z21"), new MarketData());
+            if (!Tick.ContainsKey(new TickerKey(source, "GC.Z21"))) 
+                Tick.Add(new TickerKey(source, "GC.Z21"), new MarketData());
+        }
+        public static void RemoveTickerSource(string source)
+        {
+            foreach(var item in Tick)
+            {
+                if (item.Key.Source == source)
+                    Tick.Remove(item.Key);
+            }
         }
         private static void TickHandler(object sender, MarketData e) {
-            var key = new TickerKey(e.Source, e.Symbol);
+            TickerKey key = new TickerKey(e.Source, e.Symbol);
             if (Tick.ContainsKey(key))
             {
                 Tick[key].Bid = e.Bid;
@@ -60,6 +71,23 @@ namespace AsynchServer
                 handlers?.Invoke(e.Source, e);
             }
 
+        }
+        private static bool IsExist(TickerKey key)
+        {
+            try
+            {
+                foreach (var item in Tick)
+                {
+                    if (item.Key.Equals(key))
+                        return true;
+                }
+            }
+            catch(Exception e)
+            {
+
+                return false;
+            }
+            return false;
         }
 
 
