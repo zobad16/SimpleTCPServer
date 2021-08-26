@@ -13,13 +13,42 @@ namespace AsynchServer
     public class Parser
     {
         private readonly LoginService loginService;
-        public Parser(LoginService login)
+        private readonly OrderService orderService;
+        public Parser(LoginService login, OrderService ods)
         {
             loginService = login;
+            orderService = ods;
         }
         public event EventHandler<Order> RaiseOrderExecutionEvent;
         public event EventHandler<MarketData> RaiseTickEvent;
-
+        public bool IsMDEventHandlerRegistered(Delegate prospectiveHandler)
+        {
+            if (this.RaiseTickEvent != null)
+            {
+                foreach (Delegate existingHandler in this.RaiseTickEvent.GetInvocationList())
+                {
+                    if (existingHandler == prospectiveHandler)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        public bool IsOrderEventHandlerRegistered(Delegate prospectiveHandler)
+        {
+            if (this.RaiseOrderExecutionEvent != null)
+            {
+                foreach (Delegate existingHandler in this.RaiseOrderExecutionEvent.GetInvocationList())
+                {
+                    if (existingHandler == prospectiveHandler)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
         public void ParseMessage(IAsyncResult ar,string source, string message) {
             StateObject state = (StateObject)ar.AsyncState;
             Socket handler = state.worksocket;

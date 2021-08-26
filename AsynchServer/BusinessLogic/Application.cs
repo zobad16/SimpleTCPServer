@@ -9,10 +9,12 @@ namespace AsynchServer
     {
         string id;
         private readonly MarketDataService mdService;
-        public Application(string _id, MarketDataService md)
+        private readonly OrderService orderService;
+        public Application(string _id, MarketDataService md, OrderService os)
         {
             id = _id;
             mdService = md;
+            orderService = os;
         }
         public void Initialize()
         {
@@ -20,8 +22,8 @@ namespace AsynchServer
             mdList.Add("GC.Z21");
             mdList.Add("GC-Z21");
             mdList.Add("XAUUSD.r");
-            mdService.Initialize(mdList,OnTick);          
-            
+            mdService.Initialize(mdList,OnTick);
+            orderService.Initialize();
         }
         public void DeInitilize()
         {

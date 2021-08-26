@@ -25,8 +25,20 @@ namespace AsynchServer
             if (Subscribers.ContainsKey(symbol))
                 Subscribers[symbol].Remove(eventHandler);
         }
+        public static void InitializeHandler(Parser parser)
+        {
+            try
+            {
+                parser.RaiseTickEvent -= TickHandler;
+                parser.RaiseTickEvent += TickHandler;
+            }
+            catch(Exception e)
+            {
+                parser.RaiseTickEvent += TickHandler;
+            }
+            
+        }
         public static void InitializeTicker(string source,Parser parser) {
-            parser.RaiseTickEvent += TickHandler;
             var key = new TickerKey(source, "");
             if(!Tick.ContainsKey(new TickerKey(source, "XAUUSD.r")))
                 Tick.Add(new TickerKey(source, "XAUUSD.r"), new MarketData());
